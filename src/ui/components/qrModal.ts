@@ -67,10 +67,18 @@ export function openQrModal(password: string, d: Dict): void {
   const downloadBtn = el("button", { class: "btn", type: "button" }, [d.download]);
   on(downloadBtn, "click", () => {
     const canvas = holder.querySelector("canvas");
-    if (canvas) {
-      const link = el("a", { href: canvas.toDataURL("image/png"), download: "wifi-qr.png" });
+    if (!canvas) return;
+    // Use a Blob + object URL (not a data: URL) and attach the anchor to the DOM:
+    // robust across browsers and CSP-friendly.
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = el("a", { href: url, download: "sesam-pass-wifi-qr.png" });
+      document.body.append(link);
       link.click();
-    }
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, "image/png");
   });
 
   const closeBtn = el("button", { class: "btn btn--ghost", type: "button" }, [d.close]);

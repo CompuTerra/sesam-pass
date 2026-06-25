@@ -23,12 +23,20 @@ describe("generatePassphrase", () => {
       wordList: SYN,
       words: 4,
       separator: "_",
-      decoration: { capitalize: true, digit: true, symbol: true, symbolSet: "!#$" },
+      decoration: { capitalize: true, digitCount: 1, symbolCount: 1, symbolSet: "!#$" },
     });
     expect(decorated.categories.has("upper")).toBe(true);
     expect(decorated.categories.has("digit")).toBe(true);
     expect(decorated.categories.has("symbol")).toBe(true);
     expect(decorated.entropyBits).toBeGreaterThan(base.entropyBits);
+  });
+
+  it("inserts the requested number of digits and adds more entropy with higher counts", () => {
+    const r2 = generatePassphrase({ wordList: SYN, words: 4, separator: "_", decoration: { digitCount: 2 } });
+    expect((r2.secret.match(/[0-9]/g) ?? []).length).toBe(2);
+    const r3 = generatePassphrase({ wordList: SYN, words: 4, separator: "_", decoration: { digitCount: 3 } });
+    expect((r3.secret.match(/[0-9]/g) ?? []).length).toBe(3);
+    expect(r3.entropyBits).toBeGreaterThan(r2.entropyBits);
   });
 
   it("works with the real German list (7776 words, ~77.5 bits at 6 words)", async () => {

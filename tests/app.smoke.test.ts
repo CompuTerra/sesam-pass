@@ -42,4 +42,11 @@ describe("app smoke test", () => {
     // strength meter rendered with a bit count
     expect(app.querySelector(".meter__bits")?.textContent ?? "").toMatch(/\d/);
   });
+
+  it("info view renders bilingual sections with external links", async () => {
+    const { infoView } = await import("../src/ui/components/infoView");
+    const node = infoView("de");
+    expect(node.querySelectorAll(".info__section").length).toBeGreaterThan(3);
+    expect(node.querySelector(".info__links a")?.getAttribute("href") ?? "").toContain("http");
+  });
 });

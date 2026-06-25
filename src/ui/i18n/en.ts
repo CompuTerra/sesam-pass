@@ -54,6 +54,15 @@ export const en: Dict = {
   },
   customExclude: "Exclude characters",
   separator: "Separator",
+  separatorOption: {
+    dash: "Hyphen ( - )",
+    dot: "Dot ( . )",
+    underscore: "Underscore ( _ )",
+    space: "Space",
+    none: "none",
+  },
+  decDigits: "Add digits",
+  decSymbols: "Add symbols",
   capitalize: "Capitalize words",
   pronounceable: "Pronounceable (weaker)",
   accountName: "Account name (excluded)",
@@ -65,6 +74,7 @@ export const en: Dict = {
   copy: "Copy",
   copied: "Copied!",
   clipboardCleared: "Clipboard cleared automatically",
+  clickToCopy: "Click to copy",
   show: "Show",
   hide: "Hide",
   clearList: "Clear list",
@@ -104,6 +114,8 @@ export const en: Dict = {
   theme: "Theme",
   themeOption: { light: "Light", dark: "Dark", auto: "System" },
   language: "Language",
+  navGenerator: "Generator",
+  navInfo: "Info & security",
 
   securityTitle: "Security & trust",
   securityBody: [

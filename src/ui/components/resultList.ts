@@ -3,7 +3,8 @@ import type { Dict } from "../i18n";
 import { el, on } from "../dom";
 
 export interface ResultHandlers {
-  onCopy: (text: string, button: HTMLButtonElement) => void;
+  /** Copy `text`; `feedback` is invoked on success (and again when auto-cleared). */
+  onCopy: (text: string, feedback: (state: "copied" | "cleared") => void) => void;
   onRegenerate: (index: number) => void;
   onBreachCheck: (text: string, statusEl: HTMLElement) => void;
   onQr?: (text: string) => void;
@@ -16,40 +17,49 @@ export function resultList(results: readonly GenResult[], d: Dict, h: ResultHand
 }
 
 function resultRow(r: GenResult, index: number, d: Dict, h: ResultHandlers): HTMLElement {
-  let revealed = false;
+  // Shown by default; clicking the secret copies it (clicking still copies the real
+  // value even when masked via the toggle).
+  let revealed = true;
   const secretEl = el(
     "code",
-    { class: "secret secret--hidden", tabindex: "0", role: "button", "aria-label": d.show },
-    [maskOf(r.secret)],
+    { class: "secret", tabindex: "0", role: "button", "aria-label": d.clickToCopy, title: d.clickToCopy },
+    [r.secret],
   );
-  const setReveal = (value: boolean): void => {
-    revealed = value;
+  const renderSecret = (): void => {
     secretEl.textContent = revealed ? r.secret : maskOf(r.secret);
     secretEl.classList.toggle("secret--hidden", !revealed);
-    secretEl.setAttribute("aria-label", revealed ? d.hide : d.show);
   };
-  on(secretEl, "click", () => setReveal(!revealed));
+
+  const copyBtn = actionButton(d.copy, () => doCopy());
+  function doCopy(): void {
+    h.onCopy(r.secret, (s) => flashButton(copyBtn, s === "copied" ? d.copied : d.clipboardCleared));
+  }
+  on(secretEl, "click", doCopy);
   on(secretEl, "keydown", (ev) => {
     if (ev.key === "Enter" || ev.key === " ") {
       ev.preventDefault();
-      setReveal(!revealed);
+      doCopy();
     }
+  });
+
+  const toggleBtn = actionButton(d.hide, (b) => {
+    revealed = !revealed;
+    renderSecret();
+    b.textContent = revealed ? d.hide : d.show;
   });
 
   const status = el("p", { class: "row__status", role: "status" });
 
   const actions: HTMLElement[] = [
-    actionButton(d.show, () => setReveal(!revealed)),
-    actionButton(d.copy, (b) => h.onCopy(r.secret, b)),
+    toggleBtn,
+    copyBtn,
     actionButton(d.regenerate, () => h.onRegenerate(index)),
     actionButton(d.checkBreach, () => h.onBreachCheck(r.secret, status), (b) => {
       b.classList.add("iconbtn--breach");
       b.title = d.breachDisclosure;
     }),
   ];
-  if (h.onQr) {
-    actions.push(actionButton(d.qr, () => h.onQr?.(r.secret)));
-  }
+  if (h.onQr) actions.push(actionButton(d.qr, () => h.onQr?.(r.secret)));
 
   return el("li", { class: "row" }, [
     el("div", { class: "row__top" }, [
@@ -69,6 +79,18 @@ function actionButton(
   decorate?.(button);
   on(button, "click", () => onClick(button));
   return button;
+}
+
+const originalLabels = new WeakMap<HTMLButtonElement, string>();
+function flashButton(button: HTMLButtonElement, message: string): void {
+  if (!originalLabels.has(button)) originalLabels.set(button, button.textContent ?? "");
+  button.textContent = message;
+  button.classList.add("iconbtn--flash");
+  window.setTimeout(() => {
+    button.textContent = originalLabels.get(button) ?? "";
+    button.classList.remove("iconbtn--flash");
+    originalLabels.delete(button);
+  }, 1500);
 }
 
 function maskOf(secret: string): string {

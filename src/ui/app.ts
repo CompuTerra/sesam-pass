@@ -27,8 +27,8 @@ interface State {
   words: number;
   separator: string;
   capitalize: boolean;
-  decDigit: boolean;
-  decSymbol: boolean;
+  decDigitCount: number;
+  decSymbolCount: number;
   decSymbolSet: string;
   lower: boolean;
   upper: boolean;
@@ -51,8 +51,8 @@ const state: State = {
   words: 6,
   separator: "-",
   capitalize: false,
-  decDigit: false,
-  decSymbol: false,
+  decDigitCount: 0,
+  decSymbolCount: 0,
   decSymbolSet: "",
   lower: true,
   upper: true,
@@ -94,8 +94,8 @@ function seedFromPreset(p: PresetSpec): void {
   state.customExclude = cs?.customExclude ?? "";
   state.separator = p.passphrase?.separator ?? "-";
   state.capitalize = p.passphrase?.capitalize ?? false;
-  state.decDigit = p.passphrase?.digit ?? false;
-  state.decSymbol = p.passphrase?.symbol ?? false;
+  state.decDigitCount = p.passphrase?.digitCount ?? 0;
+  state.decSymbolCount = p.passphrase?.symbolCount ?? 0;
   state.decSymbolSet = p.passphrase?.symbolSet ?? "";
   state.pronounceable = false;
 }
@@ -111,8 +111,8 @@ async function generateOne(): Promise<GenResult> {
       separator: state.separator,
       decoration: {
         capitalize: state.capitalize,
-        digit: state.decDigit,
-        symbol: state.decSymbol,
+        digitCount: state.decDigitCount,
+        symbolCount: state.decSymbolCount,
         symbolSet: state.decSymbolSet,
       },
     });
@@ -136,6 +136,8 @@ async function generateOne(): Promise<GenResult> {
     length: state.length,
     accountName: state.accountName,
     excludeAmbiguous: state.excludeAmbiguous,
+    symbols: state.symbols,
+    customExclude: state.customExclude,
   });
 }
 
@@ -172,23 +174,10 @@ function applyTheme(): void {
 
 // ---- row handlers -----------------------------------------------------------
 
-const originalLabels = new WeakMap<HTMLButtonElement, string>();
-function flash(button: HTMLButtonElement, message: string): void {
-  if (!originalLabels.has(button)) originalLabels.set(button, button.textContent ?? "");
-  button.textContent = message;
-  button.classList.add("iconbtn--flash");
-  window.setTimeout(() => {
-    button.textContent = originalLabels.get(button) ?? "";
-    button.classList.remove("iconbtn--flash");
-    originalLabels.delete(button);
-  }, 1500);
-}
-
-async function onCopy(text: string, button: HTMLButtonElement): Promise<void> {
-  const d = dict(state.lang);
+async function onCopy(text: string, feedback: (state: "copied" | "cleared") => void): Promise<void> {
   try {
-    await copyWithAutoClear(text, { timeoutMs: 20000, onClear: () => flash(button, d.clipboardCleared) });
-    flash(button, d.copied);
+    await copyWithAutoClear(text, { timeoutMs: 20000, onClear: () => feedback("cleared") });
+    feedback("copied");
   } catch {
     /* clipboard unavailable (e.g. insecure context) — silently ignore */
   }
@@ -281,6 +270,24 @@ function textField(
   return el("label", { class: "field" }, [el("span", { class: "field__label" }, [label]), input]);
 }
 
+function symbolSetField(d: Dict): HTMLElement {
+  return selectField(
+    d.symbols,
+    state.symbols,
+    [
+      { value: "none", label: d.symbolOption.none },
+      { value: "full", label: d.symbolOption.full },
+      { value: "websafe", label: d.symbolOption.websafe },
+      { value: "shellsafe", label: d.symbolOption.shellsafe },
+      { value: "macsafe", label: d.symbolOption.macsafe },
+    ],
+    (v) => {
+      state.symbols = v as SymbolSet;
+      scheduleRegen();
+    },
+  );
+}
+
 function buildOptions(d: Dict): HTMLElement {
   const preset = getPreset(state.presetId)!;
   const isCustom = state.presetId === "custom";
@@ -307,12 +314,18 @@ function buildOptions(d: Dict): HTMLElement {
   if (state.type === "passphrase") {
     const w = preset.words ?? { min: 3, max: 12, default: 6 };
     wrap.append(sliderField(d.words, state.words, w.min, w.max, (v) => { state.words = v; scheduleRegen(); }));
-    wrap.append(textField(d.separator, state.separator, "-", (v) => { state.separator = v; scheduleRegen(); }));
+    wrap.append(
+      selectField(d.separator, state.separator, [
+        { value: "-", label: d.separatorOption.dash },
+        { value: ".", label: d.separatorOption.dot },
+        { value: "_", label: d.separatorOption.underscore },
+        { value: " ", label: d.separatorOption.space },
+        { value: "", label: d.separatorOption.none },
+      ], (v) => { state.separator = v; scheduleRegen(); }),
+    );
     wrap.append(checkboxField(d.capitalize, state.capitalize, (v) => { state.capitalize = v; scheduleRegen(); }));
-    if (isCustom || preset.id === "passphrase-windows") {
-      wrap.append(checkboxField(d.charDigit, state.decDigit, (v) => { state.decDigit = v; scheduleRegen(); }));
-      wrap.append(checkboxField(d.symbols, state.decSymbol, (v) => { state.decSymbol = v; scheduleRegen(); }));
-    }
+    wrap.append(sliderField(d.decDigits, state.decDigitCount, 0, 3, (v) => { state.decDigitCount = v; scheduleRegen(); }));
+    wrap.append(sliderField(d.decSymbols, state.decSymbolCount, 0, 3, (v) => { state.decSymbolCount = v; scheduleRegen(); }));
   } else if (state.type === "pin") {
     const r = preset.length ?? { min: 4, max: 12, default: 6 };
     wrap.append(sliderField(d.length, state.length, r.min, r.max, (v) => { state.length = v; scheduleRegen(); }));
@@ -323,24 +336,22 @@ function buildOptions(d: Dict): HTMLElement {
       wrap.append(checkboxField(d.charLower, state.lower, (v) => { state.lower = v; scheduleRegen(); }));
       wrap.append(checkboxField(d.charUpper, state.upper, (v) => { state.upper = v; scheduleRegen(); }));
       wrap.append(checkboxField(d.charDigit, state.digit, (v) => { state.digit = v; scheduleRegen(); }));
-      wrap.append(
-        selectField(
-          d.symbols,
-          state.symbols,
-          [
-            { value: "none", label: d.symbolOption.none },
-            { value: "full", label: d.symbolOption.full },
-            { value: "websafe", label: d.symbolOption.websafe },
-            { value: "shellsafe", label: d.symbolOption.shellsafe },
-            { value: "macsafe", label: d.symbolOption.macsafe },
-          ],
-          (v) => { state.symbols = v as SymbolSet; scheduleRegen(); },
-        ),
-      );
+      wrap.append(symbolSetField(d));
       wrap.append(textField(d.customExclude, state.customExclude, "", (v) => { state.customExclude = v; scheduleRegen(); }));
+      wrap.append(checkboxField(d.excludeAmbiguous, state.excludeAmbiguous, (v) => { state.excludeAmbiguous = v; scheduleRegen(); }));
       wrap.append(checkboxField(d.pronounceable, state.pronounceable, (v) => { state.pronounceable = v; scheduleRegen(); }));
+    } else {
+      wrap.append(
+        el("details", { class: "advanced" }, [
+          el("summary", { class: "advanced__summary" }, [d.advanced]),
+          el("div", { class: "advanced__body" }, [
+            symbolSetField(d),
+            checkboxField(d.excludeAmbiguous, state.excludeAmbiguous, (v) => { state.excludeAmbiguous = v; scheduleRegen(); }),
+            textField(d.customExclude, state.customExclude, "", (v) => { state.customExclude = v; scheduleRegen(); }),
+          ]),
+        ]),
+      );
     }
-    wrap.append(checkboxField(d.excludeAmbiguous, state.excludeAmbiguous, (v) => { state.excludeAmbiguous = v; scheduleRegen(); }));
     if (preset.forbidAccountName) {
       wrap.append(textField(d.accountName, state.accountName, d.accountNamePlaceholder, (v) => { state.accountName = v; scheduleRegen(); }));
     }
@@ -420,7 +431,14 @@ function onPresetChange(id: string): void {
   void regenerate(state.batchCount);
 }
 
-function buildHeader(d: Dict): HTMLElement {
+function navButton(label: string, active: boolean, onClick: () => void): HTMLElement {
+  const button = el("button", { class: active ? "tab tab--active" : "tab", type: "button" }, [label]);
+  if (active) button.setAttribute("aria-current", "page");
+  on(button, "click", onClick);
+  return button;
+}
+
+function buildHeader(d: Dict, route: Route): HTMLElement {
   const langSelect = selectField(
     d.language,
     state.lang,
@@ -448,11 +466,16 @@ function buildHeader(d: Dict): HTMLElement {
       applyTheme();
     },
   );
+  const nav = el("nav", { class: "nav" }, [
+    navButton(d.navGenerator, route === "generator", () => go("generator")),
+    navButton(d.navInfo, route === "info", () => go("info")),
+  ]);
   return el("header", { class: "header" }, [
     el("div", { class: "header__brand" }, [
       el("h1", { class: "header__title" }, [d.appTitle]),
       el("p", { class: "header__tagline" }, [d.tagline]),
     ]),
+    nav,
     el("div", { class: "header__controls" }, [langSelect, themeSelect]),
   ]);
 }
@@ -490,7 +513,7 @@ function updateOutput(): void {
 
   const preset = getPreset(state.presetId)!;
   const handlers: ResultHandlers = {
-    onCopy: (t, b) => void onCopy(t, b),
+    onCopy: (t, fb) => void onCopy(t, fb),
     onRegenerate: (i) => void onRegenerate(i),
     onBreachCheck: (t, s) => void onBreachCheck(t, s),
     ...(preset.features?.wifiQr ? { onQr: (t: string) => openQrModal(t, dict(state.lang)) } : {}),
@@ -498,12 +521,34 @@ function updateOutput(): void {
   outputEl.append(resultList(state.results, d, handlers));
 }
 
+type Route = "generator" | "info";
+
+function currentRoute(): Route {
+  return location.hash.replace(/^#/, "") === "info" ? "info" : "generator";
+}
+
+function go(route: Route): void {
+  if (route === "info") location.hash = "info";
+  else if (location.hash) location.hash = "";
+  else render();
+}
+
 function render(): void {
   const d = dict(state.lang);
   document.documentElement.lang = state.lang;
+  const route = currentRoute();
   clear(root);
+
+  if (route === "info") {
+    outputEl = undefined;
+    const main = el("main", { class: "main" });
+    root.append(buildHeader(d, route), main, buildFooter(d));
+    void import("./components/infoView").then(({ infoView }) => main.append(infoView(state.lang)));
+    return;
+  }
+
   root.append(
-    buildHeader(d),
+    buildHeader(d, route),
     el("main", { class: "main" }, [
       buildEnvironment(d),
       el("section", { class: "panel" }, [
@@ -536,6 +581,7 @@ export function init(): void {
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (state.theme === "auto") applyTheme();
   });
+  window.addEventListener("hashchange", () => render());
 
   render();
   void regenerate(state.batchCount);

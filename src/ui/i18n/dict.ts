@@ -30,6 +30,9 @@ export interface Dict {
   symbolOption: Record<SymbolSet, string>;
   customExclude: string;
   separator: string;
+  separatorOption: Record<"dash" | "dot" | "underscore" | "space" | "none", string>;
+  decDigits: string;
+  decSymbols: string;
   capitalize: string;
   pronounceable: string;
   accountName: string;
@@ -42,6 +45,7 @@ export interface Dict {
   copy: string;
   copied: string;
   clipboardCleared: string;
+  clickToCopy: string;
   show: string;
   hide: string;
   clearList: string;
@@ -75,6 +79,8 @@ export interface Dict {
   theme: string;
   themeOption: Record<"light" | "dark" | "auto", string>;
   language: string;
+  navGenerator: string;
+  navInfo: string;
 
   // trust / footer
   securityTitle: string;

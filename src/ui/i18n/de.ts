@@ -54,6 +54,15 @@ export const de: Dict = {
   },
   customExclude: "Zeichen ausschließen",
   separator: "Trennzeichen",
+  separatorOption: {
+    dash: "Bindestrich ( - )",
+    dot: "Punkt ( . )",
+    underscore: "Unterstrich ( _ )",
+    space: "Leerzeichen",
+    none: "keins",
+  },
+  decDigits: "Ziffern einfügen",
+  decSymbols: "Symbole einfügen",
   capitalize: "Wörter großschreiben",
   pronounceable: "Aussprechbar (schwächer)",
   accountName: "Kontoname (wird ausgeschlossen)",
@@ -65,6 +74,7 @@ export const de: Dict = {
   copy: "Kopieren",
   copied: "Kopiert!",
   clipboardCleared: "Zwischenablage automatisch gelöscht",
+  clickToCopy: "Klick zum Kopieren",
   show: "Anzeigen",
   hide: "Verbergen",
   clearList: "Liste leeren",
@@ -104,6 +114,8 @@ export const de: Dict = {
   theme: "Design",
   themeOption: { light: "Hell", dark: "Dunkel", auto: "System" },
   language: "Sprache",
+  navGenerator: "Generator",
+  navInfo: "Info & Sicherheit",
 
   securityTitle: "Sicherheit & Vertrauen",
   securityBody: [

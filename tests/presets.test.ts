@@ -57,6 +57,17 @@ describe("presets", () => {
     }
   });
 
+  it("honors symbols + customExclude overrides while keeping windows-ad >= 3 classes", async () => {
+    const p = getPreset("windows-ad")!;
+    for (let i = 0; i < 100; i++) {
+      const r = await applyPreset(p, { symbols: "none" });
+      expect(r.categories.size).toBeGreaterThanOrEqual(3);
+      expect(r.secret).toMatch(/^[A-Za-z0-9]+$/); // no symbols when overridden to "none"
+    }
+    const excluded = await applyPreset(p, { customExclude: "ABCDEF" });
+    expect(excluded.secret).not.toMatch(/[ABCDEF]/);
+  });
+
   it("every preset has bilingual labels, notes and warnings", () => {
     for (const p of PRESETS) {
       expect(p.labels.de.length).toBeGreaterThan(0);

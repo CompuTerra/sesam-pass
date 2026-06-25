@@ -6,11 +6,11 @@ import { pick, randomInt, sampleWithReplacement } from "./rng";
 export interface PassphraseDecoration {
   /** Capitalize each word's first letter (adds the uppercase category, 0 added bits). */
   capitalize?: boolean;
-  /** Insert one uniform digit at a random position. */
-  digit?: boolean;
-  /** Insert one uniform symbol at a random position. */
-  symbol?: boolean;
-  /** Symbol set to draw from when `symbol` is set (defaults to shell-safe). */
+  /** Number of uniform digits to insert at random positions (default 0). */
+  digitCount?: number;
+  /** Number of uniform symbols to insert at random positions (default 0). */
+  symbolCount?: number;
+  /** Symbol set to draw from for inserted symbols (defaults to shell-safe). */
   symbolSet?: string;
 }
 
@@ -50,15 +50,14 @@ export function generatePassphrase(o: PassphraseOptions): GenResult {
     extraBits += choiceBits(optionCount) + choiceBits(positions);
   };
 
-  if (dec.digit) {
-    insertRandom(pick([...SETS.digit]), 10);
-    notes.push("decorated:digit");
-  }
-  if (dec.symbol) {
-    const symbolSet = dec.symbolSet && dec.symbolSet.length > 0 ? dec.symbolSet : SETS.symbolShellSafe;
-    insertRandom(pick([...symbolSet]), symbolSet.length);
-    notes.push("decorated:symbol");
-  }
+  const digitCount = Math.max(0, Math.floor(dec.digitCount ?? 0));
+  for (let i = 0; i < digitCount; i++) insertRandom(pick([...SETS.digit]), 10);
+  if (digitCount > 0) notes.push(`decorated:digit:${digitCount}`);
+
+  const symbolSet = dec.symbolSet && dec.symbolSet.length > 0 ? dec.symbolSet : SETS.symbolShellSafe;
+  const symbolCount = Math.max(0, Math.floor(dec.symbolCount ?? 0));
+  for (let i = 0; i < symbolCount; i++) insertRandom(pick([...symbolSet]), symbolSet.length);
+  if (symbolCount > 0) notes.push(`decorated:symbol:${symbolCount}`);
 
   const base = wordlistEntropyBits(o.wordList.length, count);
 

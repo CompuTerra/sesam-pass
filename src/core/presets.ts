@@ -1,5 +1,5 @@
 import type { CharCategory, GenResult, Lang, OutputType } from "./types";
-import type { CharsetOptions } from "./charset";
+import type { CharsetOptions, SymbolSet } from "./charset";
 import { detectCategories } from "./charset";
 import { generatePassword, generatePin } from "./generator";
 import { generatePassphrase } from "./passphrase";
@@ -37,8 +37,8 @@ export interface PresetSpec {
   readonly passphrase?: {
     readonly capitalize?: boolean;
     readonly separator?: string;
-    readonly digit?: boolean;
-    readonly symbol?: boolean;
+    readonly digitCount?: number;
+    readonly symbolCount?: number;
     readonly symbolSet?: string;
   };
 
@@ -55,6 +55,10 @@ export interface PresetParams {
   readonly accountName?: string;
   /** Optional override of the preset's ambiguous-character exclusion. */
   readonly excludeAmbiguous?: boolean;
+  /** Optional override of the symbol set (advanced password controls). */
+  readonly symbols?: SymbolSet;
+  /** Optional extra characters to exclude (advanced password controls). */
+  readonly customExclude?: string;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -87,8 +91,8 @@ export async function applyPreset(p: PresetSpec, overrides: PresetParams = {}): 
       separator: p.passphrase?.separator ?? "-",
       decoration: {
         capitalize: p.passphrase?.capitalize ?? false,
-        digit: p.passphrase?.digit ?? false,
-        symbol: p.passphrase?.symbol ?? false,
+        digitCount: p.passphrase?.digitCount ?? 0,
+        symbolCount: p.passphrase?.symbolCount ?? 0,
         ...(p.passphrase?.symbolSet !== undefined ? { symbolSet: p.passphrase.symbolSet } : {}),
       },
     });
@@ -104,6 +108,8 @@ export async function applyPreset(p: PresetSpec, overrides: PresetParams = {}): 
   const charset = {
     ...(p.charset ?? {}),
     ...(overrides.excludeAmbiguous !== undefined ? { excludeAmbiguous: overrides.excludeAmbiguous } : {}),
+    ...(overrides.symbols !== undefined ? { symbols: overrides.symbols } : {}),
+    ...(overrides.customExclude !== undefined ? { customExclude: overrides.customExclude } : {}),
   };
   for (let attempt = 0; attempt < 1000; attempt++) {
     const raw = generatePassword({
@@ -205,7 +211,7 @@ export const PRESETS: readonly PresetSpec[] = [
     },
     words: { min: 4, max: 10, default: 6 },
     wordListLang: "de",
-    passphrase: { separator: "-", capitalize: true, digit: true, symbol: true, symbolSet: "!#$*+-=?_" },
+    passphrase: { separator: "-", capitalize: true, digitCount: 1, symbolCount: 1, symbolSet: "!#$*+-=?_" },
     minCategoryCount: 3,
     notes: {
       de: ["Jedes Wort groß + eine zufällige Ziffer und ein Symbol → ≥ 3 Zeichenklassen."],

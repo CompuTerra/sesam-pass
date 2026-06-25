@@ -542,6 +542,96 @@ body {
   opacity: 0.8;
 }
 
+/* ---- nav tabs ------------------------------------------------------------- */
+.nav {
+  display: flex;
+  gap: 6px;
+  align-self: center;
+  flex: 1 1 auto;
+}
+.tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab--active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* ---- advanced section (password presets) ---------------------------------- */
+.advanced {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 2px 12px;
+}
+.advanced__summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 9px 0;
+}
+.advanced[open] .advanced__summary {
+  color: var(--text);
+}
+.advanced__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+  padding: 6px 0 12px;
+}
+
+/* ---- info view ------------------------------------------------------------ */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.info__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.info__title {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+.info__p {
+  font-size: 0.95rem;
+}
+.info__list,
+.info__links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+}
+.info__list li {
+  list-style: disc;
+  font-size: 0.92rem;
+}
+.info__links li {
+  list-style: none;
+}
+.info__links a {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.info__links a:hover {
+  text-decoration: underline;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
