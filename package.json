@@ -1,0 +1,28 @@
+{
+  "name": "sesam-pass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Sicherer, vollständig client-seitiger Passwort- & Passphrasen-Generator (zero runtime dependencies).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "wordlists": "tsx scripts/build-wordlists.ts",
+    "dev": "npm run wordlists && vite",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run wordlists && vitest run",
+    "test:watch": "npm run wordlists && vitest",
+    "build": "npm run wordlists && npm run typecheck && vite build && tsx scripts/postbuild.ts",
+    "preview": "vite preview --port 4173"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "happy-dom": "^20.10.6",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
+  }
+}

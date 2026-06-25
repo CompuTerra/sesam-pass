@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+*.local
+.DS_Store
+
+# Generated from wordlists/*.txt by scripts/build-wordlists.ts
+/src/core/wordlists/eff_large.ts
+/src/core/wordlists/de_7776.ts
+
+# SRI manifest written by scripts/add-sri.ts
+/dist/SRI.txt

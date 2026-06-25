@@ -1,0 +1,14 @@
+{
+  "name": "sesam-pass — Passwort- & Passphrasen-Generator",
+  "short_name": "sesam-pass",
+  "description": "Sicherer, vollständig client-seitiger Passwort- & Passphrasen-Generator.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
