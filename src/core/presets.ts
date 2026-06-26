@@ -173,7 +173,7 @@ export const PRESETS: readonly PresetSpec[] = [
       de: "Merkbare Passphrase aus deutschen Wörtern (dys2p, umlautfrei).",
       en: "Memorable passphrase from German words (dys2p, no umlauts).",
     },
-    words: { min: 4, max: 12, default: 6 },
+    words: { min: 3, max: 12, default: 6 },
     wordListLang: "de",
     passphrase: { separator: "-", capitalize: false },
     notes: {
@@ -191,7 +191,7 @@ export const PRESETS: readonly PresetSpec[] = [
       de: "Merkbare Passphrase aus englischen Wörtern (EFF-Liste).",
       en: "Memorable passphrase from English words (EFF wordlist).",
     },
-    words: { min: 4, max: 12, default: 6 },
+    words: { min: 3, max: 12, default: 6 },
     wordListLang: "en",
     passphrase: { separator: "-", capitalize: false },
     notes: {
@@ -209,7 +209,7 @@ export const PRESETS: readonly PresetSpec[] = [
       de: "Merkbare deutsche Passphrase, die Windows-Komplexität erfüllt (Groß, Ziffer, Symbol).",
       en: "Memorable German passphrase that meets Windows complexity (caps, digit, symbol).",
     },
-    words: { min: 4, max: 10, default: 6 },
+    words: { min: 3, max: 10, default: 6 },
     wordListLang: "de",
     passphrase: { separator: "-", capitalize: true, digitCount: 1, symbolCount: 1, symbolSet: "!#$*+-=?_" },
     minCategoryCount: 3,

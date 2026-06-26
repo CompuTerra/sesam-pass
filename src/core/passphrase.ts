@@ -1,7 +1,7 @@
 import type { GenResult } from "./types";
 import { detectCategories, SETS } from "./charset";
 import { choiceBits, wordlistEntropyBits } from "./entropy";
-import { pick, randomInt, sampleWithReplacement } from "./rng";
+import { pick, sampleWithReplacement } from "./rng";
 
 export interface PassphraseDecoration {
   /** Capitalize each word's first letter (adds the uppercase category, 0 added bits). */
@@ -43,21 +43,26 @@ export function generatePassphrase(o: PassphraseOptions): GenResult {
   let extraBits = 0;
   const notes: string[] = [];
 
-  const insertRandom = (ch: string, optionCount: number): void => {
-    const positions = phrase.length + 1; // insertion slots: 0..len inclusive
-    const pos = randomInt(positions);
-    phrase = phrase.slice(0, pos) + ch + phrase.slice(pos);
-    extraBits += choiceBits(optionCount) + choiceBits(positions);
-  };
-
+  // Append digits/symbols directly onto the last word (e.g. "Tisch-Apfel-Regen7!")
+  // so the phrase stays memorable while still satisfying composition rules.
   const digitCount = Math.max(0, Math.floor(dec.digitCount ?? 0));
-  for (let i = 0; i < digitCount; i++) insertRandom(pick([...SETS.digit]), 10);
-  if (digitCount > 0) notes.push(`decorated:digit:${digitCount}`);
-
-  const symbolSet = dec.symbolSet && dec.symbolSet.length > 0 ? dec.symbolSet : SETS.symbolShellSafe;
   const symbolCount = Math.max(0, Math.floor(dec.symbolCount ?? 0));
-  for (let i = 0; i < symbolCount; i++) insertRandom(pick([...symbolSet]), symbolSet.length);
-  if (symbolCount > 0) notes.push(`decorated:symbol:${symbolCount}`);
+  const symbolSet = dec.symbolSet && dec.symbolSet.length > 0 ? dec.symbolSet : SETS.symbolShellSafe;
+
+  if (digitCount > 0 || symbolCount > 0) {
+    let tail = "";
+    for (let i = 0; i < digitCount; i++) {
+      tail += pick([...SETS.digit]);
+      extraBits += choiceBits(10);
+    }
+    for (let i = 0; i < symbolCount; i++) {
+      tail += pick([...symbolSet]);
+      extraBits += choiceBits(symbolSet.length);
+    }
+    phrase += tail;
+    if (digitCount > 0) notes.push(`appended:digit:${digitCount}`);
+    if (symbolCount > 0) notes.push(`appended:symbol:${symbolCount}`);
+  }
 
   const base = wordlistEntropyBits(o.wordList.length, count);
 

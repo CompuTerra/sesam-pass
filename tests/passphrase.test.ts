@@ -28,12 +28,14 @@ describe("generatePassphrase", () => {
     expect(decorated.categories.has("upper")).toBe(true);
     expect(decorated.categories.has("digit")).toBe(true);
     expect(decorated.categories.has("symbol")).toBe(true);
+    expect(decorated.secret).toMatch(/[a-z]\d[!#$]$/); // trailing "<letter><digit><symbol>"
     expect(decorated.entropyBits).toBeGreaterThan(base.entropyBits);
   });
 
   it("inserts the requested number of digits and adds more entropy with higher counts", () => {
     const r2 = generatePassphrase({ wordList: SYN, words: 4, separator: "_", decoration: { digitCount: 2 } });
     expect((r2.secret.match(/[0-9]/g) ?? []).length).toBe(2);
+    expect(r2.secret).toMatch(/[a-z]\d\d$/i); // digits attached to the last word at the end
     const r3 = generatePassphrase({ wordList: SYN, words: 4, separator: "_", decoration: { digitCount: 3 } });
     expect((r3.secret.match(/[0-9]/g) ?? []).length).toBe(3);
     expect(r3.entropyBits).toBeGreaterThan(r2.entropyBits);
